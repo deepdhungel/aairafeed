@@ -31,7 +31,6 @@ def index():
 @app.route('/submit_feeding', methods=['POST'])
 def submit_feeding():
     try:
-        # Get form data as JSON
         data = request.get_json()
         if not data:
             return jsonify({'status': 'error', 'message': 'No data received'}), 400
@@ -39,20 +38,17 @@ def submit_feeding():
         feeding_date = data.get('feeding_date')
         feeding_time = data.get('feeding_time')
         feeding_item = data.get('feeding_item')
-        volume_prepared = data.get('volume_prepared')  # Changed to accept string input
-        volume_left = data.get('volume_left')  # Will be like "0%", "10%", etc.
+        volume_prepared = data.get('volume_prepared')
+        volume_left = data.get('volume_left')
 
-        # Validate required fields
         if not all([feeding_date, feeding_time, feeding_item, volume_prepared, volume_left]):
             return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
 
-        # Convert volume_prepared to float then round to handle decimal inputs
         try:
             volume_prepared = round(float(volume_prepared))
         except ValueError:
             return jsonify({'status': 'error', 'message': 'Prepared volume must be a number'}), 400
 
-        # Convert volume_left to int (remove % and convert)
         try:
             volume_left = int(volume_left.rstrip('%'))
         except ValueError:
@@ -77,7 +73,6 @@ def submit_feeding():
 @app.route('/submit_allergy', methods=['POST'])
 def submit_allergy():
     try:
-        # Get form data as JSON
         data = request.get_json()
         if not data:
             return jsonify({'status': 'error', 'message': 'No data received'}), 400
@@ -87,7 +82,6 @@ def submit_allergy():
         suspected_item = data.get('suspected_item', '')
         symptoms = data.get('symptoms', '')
 
-        # Validate required fields
         if not record_date:
             return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
 
@@ -113,12 +107,24 @@ def get_feeding_items():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        cur.execute("SELECT DISTINCT feeding_item FROM feed_records ORDER BY feeding_item")
+        cur.execute("""
+            SELECT DISTINCT feeding_item as item
+            FROM feed_records 
+            WHERE feeding_item IS NOT NULL AND feeding_item != ''
+            ORDER BY item
+        """)
         items = [item[0] for item in cur.fetchall()]
         
-        return jsonify({'status': 'success', 'items': items})
+        return jsonify({
+            'status': 'success',
+            'items': items if items else []
+        })
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        print("Database error:", str(e))
+        return jsonify({
+            'status': 'error',
+            'message': 'Database error: ' + str(e)
+        }), 500
     finally:
         if 'cur' in locals(): cur.close()
         if 'conn' in locals(): conn.close()
@@ -129,7 +135,6 @@ def get_analytics():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Get consumption data
         cur.execute("""
             SELECT 
                 feeding_item,
@@ -138,11 +143,10 @@ def get_analytics():
                 ROUND(AVG(volume_prepared), 1) as avg_prepared
             FROM feed_records
             GROUP BY feeding_item
-            ORDER BY frequency DESC, avg_consumed DESC
+            ORDER BY COUNT(*) DESC, AVG(volume_prepared - (volume_prepared * volume_left / 100.0)) DESC
         """)
         consumption_data = cur.fetchall()
         
-        # Get confirmed allergens with counts and symptoms
         cur.execute("""
             SELECT 
                 suspected_item,
@@ -153,19 +157,17 @@ def get_analytics():
             AND suspected_item IS NOT NULL 
             AND suspected_item != ''
             GROUP BY suspected_item
-            ORDER BY allergy_count DESC
+            ORDER BY COUNT(*) DESC
         """)
         allergen_data = cur.fetchall()
         
         confirmed_allergens = {row[0]: {'count': row[1], 'symptoms': row[2]} for row in allergen_data}
         
-        # Prepare response data
         items = [row[0] for row in consumption_data]
         frequencies = [row[1] for row in consumption_data]
         avg_consumed = [row[2] for row in consumption_data]
         avg_prepared = [row[3] for row in consumption_data]
         
-        # Generate plot with labels
         plt.figure(figsize=(10, 6))
         x = np.arange(len(items))
         width = 0.35
@@ -173,7 +175,6 @@ def get_analytics():
         bars1 = plt.bar(x - width/2, frequencies, width, label='Frequency')
         bars2 = plt.bar(x + width/2, avg_consumed, width, label='Avg Consumed (tbsp)')
         
-        # Add value labels to each bar
         for bar in bars1:
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2., height,
@@ -199,7 +200,6 @@ def get_analytics():
         plot_url = base64.b64encode(buf.getvalue()).decode('utf-8')
         plt.close()
         
-        # Prepare suggestions
         suggestions = []
         for i in range(min(3, len(consumption_data))):
             item = consumption_data[i]

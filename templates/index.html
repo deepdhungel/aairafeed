@@ -131,9 +131,43 @@
             margin-top: 5px;
         }
         
-        .bar-label {
-            font-size: 12px;
-            text-anchor: middle;
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--dark-pink);
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .dropdown-item {
+            color: var(--text-color);
+            padding: 8px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--blush-pink);
+            color: var(--text-color);
+        }
+        
+        .dropdown-item.disabled {
+            color: #6c757d;
+            pointer-events: none;
+        }
+        
+        .position-relative {
+            position: relative;
+        }
+        
+        #errorDebug {
+            font-size: 0.8em;
+            color: #dc3545;
         }
     </style>
 </head>
@@ -177,7 +211,13 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="feeding_item" class="form-label">🍎 Food Item</label>
-                            <input type="text" class="form-control" id="feeding_item" list="itemSuggestions" required>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="feeding_item" list="itemSuggestions" 
+                                       placeholder="Type or select from list" autocomplete="off" required>
+                                <div id="itemsDropdown" class="dropdown-menu">
+                                    <!-- Items will be loaded here -->
+                                </div>
+                            </div>
                             <datalist id="itemSuggestions"></datalist>
                         </div>
                     </div>
@@ -278,12 +318,22 @@
                 </div>
             </div>
         </div>
+        <div id="errorDebug" class="mt-3 small text-danger"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Clear any previous errors
+            $('#errorDebug').empty();
+            
+            // Set up AJAX error handling
+            $(document).ajaxError(function(event, xhr, settings, error) {
+                $('#errorDebug').append(`<div>Error loading ${settings.url}: ${xhr.status} ${error}</div>`);
+                console.error("AJAX Error:", settings.url, xhr.status, error);
+            });
+            
             // Set default dates
             const today = new Date().toISOString().split('T')[0];
             $('#feeding_date').val(today);
@@ -295,6 +345,21 @@
             // Toggle allergy details
             $('input[name="has_allergy"]').change(function() {
                 $('#allergyDetails').toggleClass('d-none', !$('#allergy_yes').is(':checked'));
+            });
+            
+            // Handle food item input focus/click
+            $('#feeding_item').on('focus click', function() {
+                if ($('#itemsDropdown').is(':empty')) {
+                    loadFoodItemsDropdown();
+                }
+                $('#itemsDropdown').show();
+            });
+            
+            // Close dropdown when clicking outside
+            $(document).click(function(e) {
+                if (!$(e.target).closest('#feeding_item, #itemsDropdown').length) {
+                    $('#itemsDropdown').hide();
+                }
             });
             
             // Handle feeding form
@@ -383,15 +448,56 @@
             }
         });
         
+        // Load food items into dropdown
+        function loadFoodItemsDropdown() {
+            $.get('/get_feeding_items')
+                .done(function(response) {
+                    const dropdown = $('#itemsDropdown');
+                    dropdown.empty();
+                    
+                    if (response.status === 'success' && response.items && response.items.length > 0) {
+                        response.items.forEach(item => {
+                            dropdown.append(`
+                                <a class="dropdown-item" href="#" onclick="selectFoodItem('${item.replace(/'/g, "\\'")}')">
+                                    ${item}
+                                </a>
+                            `);
+                        });
+                        
+                        // Also update datalist for autocomplete
+                        $('#itemSuggestions').empty();
+                        response.items.forEach(item => {
+                            $('#itemSuggestions').append(`<option value="${item}">`);
+                            $('#itemSuggestionsAllergy').append(`<option value="${item}">`);
+                        });
+                    } else {
+                        dropdown.html('<a class="dropdown-item disabled">No food items found in database</a>');
+                    }
+                })
+                .fail(function(xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    $('#itemsDropdown').html('<a class="dropdown-item disabled">Error loading items</a>');
+                });
+        }
+        
+        function selectFoodItem(item) {
+            $('#feeding_item').val(item);
+            $('#itemsDropdown').hide();
+            $('#volume_prepared').focus();
+            return false; // prevent default anchor behavior
+        }
+        
         function loadFoodItems() {
             $.get('/get_feeding_items')
                 .done(function(response) {
                     if (response.status === 'success') {
                         $('#itemSuggestions, #itemSuggestionsAllergy').empty();
-                        response.items.forEach(item => {
-                            $('#itemSuggestions').append(`<option value="${item}">`);
-                            $('#itemSuggestionsAllergy').append(`<option value="${item}">`);
-                        });
+                        if (response.items && response.items.length > 0) {
+                            response.items.forEach(item => {
+                                $('#itemSuggestions').append(`<option value="${item}">`);
+                                $('#itemSuggestionsAllergy').append(`<option value="${item}">`);
+                            });
+                        }
                     }
                 })
                 .fail(function(xhr) {
