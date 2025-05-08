@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Feeding Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --blush-pink: #F8C8DC;
+            --soft-pink: #FFD1DC;
+            --light-pink: #FFE5EC;
+            --dark-pink: #D8A7B1;
+            --text-color: #5A3E36;
+            --allergy-red: #FF6B6B;
+        }
+        
+        body {
+            background-color: var(--light-pink);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(218, 165, 175, 0.3);
+            padding: 0;
+            overflow: hidden;
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--text-color);
+            padding: 20px 0;
+            background-color: var(--blush-pink);
+            margin: 0;
+        }
+        
+        .nav-tabs {
+            background-color: var(--soft-pink);
+            border-bottom: none;
+            padding: 0 15px;
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--text-color);
+            border: none;
+            padding: 12px 20px;
+            font-weight: 500;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background-color: white;
+            color: var(--text-color);
+            border-bottom: 3px solid var(--dark-pink);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            padding: 25px;
+            background-color: white;
+        }
+        
+        .form-control, .form-select {
+            border: 1px solid var(--dark-pink);
+            border-radius: 8px;
+            padding: 10px 15px;
+        }
+        
+        .btn-primary {
+            background-color: var(--dark-pink);
+            border-color: var(--dark-pink);
+            color: white;
+        }
+        
+        .analytics-container {
+            background-color: var(--light-pink);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .suggestion-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--dark-pink);
+        }
+        
+        .allergy-card {
+            border-left: 4px solid var(--allergy-red);
+        }
+        
+        .allergy-badge {
+            background-color: var(--allergy-red);
+            color: white;
+        }
+        
+        .allergy-section {
+            background-color: #FFF0F0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--dark-pink);
+            border-color: var(--dark-pink);
+        }
+        
+        .allergy-warning {
+            background-color: #FFF0F0;
+            border-left: 4px solid var(--allergy-red);
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .confirmed-allergen {
+            color: var(--allergy-red);
+            font-weight: bold;
+        }
+        
+        .symptoms-list {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 5px;
+        }
+        
+        .bar-label {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">👶 Baby Feeding Tracker</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="feeding-tab" data-bs-toggle="tab" data-bs-target="#feeding" type="button" role="tab">
+                    <i class="bi bi-cup-straw"></i> Feeding
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="allergy-tab" data-bs-toggle="tab" data-bs-target="#allergy" type="button" role="tab">
+                    <i class="bi bi-exclamation-triangle"></i> Allergy
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="myTabContent">
+            <!-- Feeding Tab -->
+            <div class="tab-pane fade show active" id="feeding" role="tabpanel">
+                <form id="feedingForm" class="mt-3">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="feeding_date" class="form-label">📅 Date</label>
+                            <input type="date" class="form-control" id="feeding_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="feeding_time" class="form-label">⏰ Time</label>
+                            <input type="time" class="form-control" id="feeding_time" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="feeding_item" class="form-label">🍎 Food Item</label>
+                            <input type="text" class="form-control" id="feeding_item" list="itemSuggestions" required>
+                            <datalist id="itemSuggestions"></datalist>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="volume_prepared" class="form-label">🥄 Prepared (tbsp)</label>
+                            <input type="number" class="form-control" id="volume_prepared" min="1" step="0.5" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="volume_left" class="form-label">🍽️ Leftover</label>
+                            <select class="form-select" id="volume_left" required>
+                                <option value="0%">0% (all eaten)</option>
+                                <option value="10%">10%</option>
+                                <option value="20%">20%</option>
+                                <option value="30%">30%</option>
+                                <option value="40%">40%</option>
+                                <option value="50%">50%</option>
+                                <option value="60%">60%</option>
+                                <option value="70%">70%</option>
+                                <option value="80%">80%</option>
+                                <option value="90%">90%</option>
+                                <option value="100%">100% (none eaten)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Feeding
+                    </button>
+                    <div id="feedingMessage" class="mt-3"></div>
+                </form>
+            </div>
+            
+            <!-- Allergy Tab -->
+            <div class="tab-pane fade" id="allergy" role="tabpanel">
+                <form id="allergyForm" class="mt-3">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="allergy_date" class="form-label">📅 Date</label>
+                            <input type="date" class="form-control" id="allergy_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">🤧 Allergy Symptoms?</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_allergy" id="allergy_yes" value="true">
+                                <label class="form-check-label" for="allergy_yes">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="has_allergy" id="allergy_no" value="false" checked>
+                                <label class="form-check-label" for="allergy_no">No</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="allergyDetails" class="d-none">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="suspected_item" class="form-label">🤔 Suspected Food</label>
+                                <input type="text" class="form-control" id="suspected_item" list="itemSuggestionsAllergy">
+                                <datalist id="itemSuggestionsAllergy"></datalist>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="symptoms" class="form-label">💊 Symptoms</label>
+                                <textarea class="form-control" id="symptoms" rows="3" placeholder="Rash, swelling, vomiting, etc."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Allergy Info
+                    </button>
+                    <div id="allergyMessage" class="mt-3"></div>
+                </form>
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div class="tab-pane fade" id="analytics" role="tabpanel">
+                <div class="analytics-container">
+                    <h3><i class="bi bi-bar-chart"></i> Feeding Analytics</h3>
+                    <div id="analyticsGraph"></div>
+                    
+                    <div id="suggestions" class="mt-4">
+                        <h4><i class="bi bi-lightbulb"></i> Recommendations</h4>
+                        <div id="suggestionsList"></div>
+                    </div>
+                    
+                    <div id="allergyInfo" class="allergy-section mt-4">
+                        <h4><i class="bi bi-exclamation-triangle"></i> Confirmed Allergens</h4>
+                        <div id="allergenList" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Set default dates
+            const today = new Date().toISOString().split('T')[0];
+            $('#feeding_date').val(today);
+            $('#allergy_date').val(today);
+            
+            // Load food items
+            loadFoodItems();
+            
+            // Toggle allergy details
+            $('input[name="has_allergy"]').change(function() {
+                $('#allergyDetails').toggleClass('d-none', !$('#allergy_yes').is(':checked'));
+            });
+            
+            // Handle feeding form
+            $('#feedingForm').submit(function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    feeding_date: $('#feeding_date').val(),
+                    feeding_time: $('#feeding_time').val(),
+                    feeding_item: $('#feeding_item').val(),
+                    volume_prepared: $('#volume_prepared').val(),
+                    volume_left: $('#volume_left').val()
+                };
+                
+                $.ajax({
+                    url: '/submit_feeding',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        $('#feedingMessage').removeClass('alert-danger')
+                            .addClass('alert alert-success')
+                            .text(response.message);
+                        $('#feeding_item').val('');
+                        loadFoodItems();
+                        loadAnalytics();
+                    },
+                    error: function(xhr) {
+                        $('#feedingMessage').removeClass('alert-success')
+                            .addClass('alert alert-danger')
+                            .text(xhr.responseJSON?.message || 'Error submitting feeding record');
+                        console.error('Feeding error:', xhr.responseJSON);
+                    }
+                });
+            });
+            
+            // Handle allergy form
+            $('#allergyForm').submit(function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    allergy_date: $('#allergy_date').val(),
+                    has_allergy: $('#allergy_yes').is(':checked'),
+                    suspected_item: $('#suspected_item').val(),
+                    symptoms: $('#symptoms').val()
+                };
+                
+                $.ajax({
+                    url: '/submit_allergy',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        $('#allergyMessage').removeClass('alert-danger')
+                            .addClass('alert alert-success')
+                            .text(response.message);
+                        
+                        if (formData.has_allergy) {
+                            $('#allergy_yes').prop('checked', false);
+                            $('#allergy_no').prop('checked', true);
+                            $('#allergyDetails').addClass('d-none');
+                            $('#suspected_item').val('');
+                            $('#symptoms').val('');
+                        }
+                        loadAnalytics();
+                    },
+                    error: function(xhr) {
+                        $('#allergyMessage').removeClass('alert-success')
+                            .addClass('alert alert-danger')
+                            .text(xhr.responseJSON?.message || 'Error submitting allergy record');
+                        console.error('Allergy error:', xhr.responseJSON);
+                    }
+                });
+            });
+            
+            // Load analytics when tab is shown
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+                if (e.target.getAttribute('id') === 'analytics-tab') {
+                    loadAnalytics();
+                }
+            });
+            
+            // Initial load of analytics if on that tab
+            if (window.location.hash === '#analytics') {
+                loadAnalytics();
+            }
+        });
+        
+        function loadFoodItems() {
+            $.get('/get_feeding_items')
+                .done(function(response) {
+                    if (response.status === 'success') {
+                        $('#itemSuggestions, #itemSuggestionsAllergy').empty();
+                        response.items.forEach(item => {
+                            $('#itemSuggestions').append(`<option value="${item}">`);
+                            $('#itemSuggestionsAllergy').append(`<option value="${item}">`);
+                        });
+                    }
+                })
+                .fail(function(xhr) {
+                    console.error('Error loading food items:', xhr.responseJSON);
+                });
+        }
+        
+        function loadAnalytics() {
+            $.get('/get_analytics')
+                .done(function(response) {
+                    console.log("Analytics response:", response);
+                    
+                    // Handle graph
+                    const graphContainer = $('#analyticsGraph');
+                    if (response.plot_url) {
+                        graphContainer.html(`<img src="data:image/png;base64,${response.plot_url}" class="img-fluid">`);
+                    } else {
+                        graphContainer.html('<div class="alert alert-info">No analytics data available yet.</div>');
+                    }
+                    
+                    // Handle suggestions
+                    const suggestionsContainer = $('#suggestionsList');
+                    if (response.suggestions && response.suggestions.length > 0) {
+                        let html = '';
+                        response.suggestions.forEach(suggestion => {
+                            const allergyWarning = suggestion.is_allergen ? 
+                                `<div class="allergy-warning">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> 
+                                    <span class="confirmed-allergen">CONFIRMED ALLERGEN</span>
+                                    (Reported ${suggestion.allergy_count} time${suggestion.allergy_count !== 1 ? 's' : ''})
+                                    <div class="symptoms-list">
+                                        <strong>Symptoms:</strong> ${suggestion.symptoms || 'Not specified'}
+                                    </div>
+                                </div>` : '';
+                            
+                            html += `
+                                <div class="suggestion-card ${suggestion.is_allergen ? 'allergy-card' : ''}">
+                                    <h5>${suggestion.item}</h5>
+                                    <p>Average consumed: ${suggestion.avg_consumed} tbsp</p>
+                                    <p>Consumption rate: ${suggestion.consumption_rate}%</p>
+                                    ${allergyWarning}
+                                </div>
+                            `;
+                        });
+                        suggestionsContainer.html(html);
+                    } else {
+                        suggestionsContainer.html('<div class="alert alert-info">Not enough data for recommendations yet.</div>');
+                    }
+                    
+                    // Handle confirmed allergens list
+                    const allergenList = $('#allergenList');
+                    if (response.confirmed_allergens && response.confirmed_allergens.length > 0) {
+                        let html = '<div class="list-group">';
+                        response.confirmed_allergens.forEach(allergen => {
+                            html += `
+                                <div class="list-group-item list-group-item-danger">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            <strong>${allergen.item}</strong>
+                                            <span class="badge bg-danger ms-2">${allergen.count} report${allergen.count !== 1 ? 's' : ''}</span>
+                                        </div>
+                                    </div>
+                                    <div class="symptoms-list mt-2">
+                                        <strong>Symptoms:</strong> ${allergen.symptoms || 'Not specified'}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        allergenList.html(html);
+                        $('#allergyInfo').show();
+                    } else {
+                        allergenList.html('<div class="alert alert-info">No confirmed allergens reported yet.</div>');
+                    }
+                })
+                .fail(function(xhr) {
+                    console.error("Analytics error:", xhr.responseJSON);
+                    $('#analyticsGraph').html(
+                        '<div class="alert alert-danger">Error loading analytics. Please try again.</div>'
+                    );
+                });
+        }
+    </script>
+</body>
+</html>
